@@ -24,7 +24,7 @@ Which coarse-grained representation has the highest correlation to current metri
 
 ## Contributors
 
-Group Member 1: Julia GOUNIN 
-Group Member 2: Océane SAIBOU 
-Group Member 3: Reshma VASANTE 
+- Group Member 1: Julia GOUNIN
+- Group Member 2: Océane SAIBOU
+- Group Member 3: Reshma VASANTE 
 
