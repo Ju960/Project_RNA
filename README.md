@@ -16,11 +16,22 @@ Which coarse-grained representation has the highest correlation to current metri
 2. Analyze correlation scores between coarse-grained RMSD and the metrics (RMSD, MCQ, TM-Score).
 
 ## Repository Structure
-
+├──Data/ # Contains native structures, predicted structures and their scores according to basic metrics
+├──custom_rmsd/ # Package to compute custom RMSD for different atom combinations and compare them to the basic metrics
+├──README.md/ # This file
 
 ## Installation
 
+Clone this repository and install the required dependencies:
+
+```bash
+git clone <https://github.com/Ju960/Project_RNA.git>
+cd custom_rmsd
+pip install -r requirements.txt
+```
+
 ## Usage
+See the package's README.md file
 
 ## Contributors
 
