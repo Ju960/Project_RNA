@@ -17,9 +17,7 @@ Which coarse-grained representation has the highest correlation to current metri
 
 ## Repository Structure
 ├──Data/ # Contains native structures, predicted structures and their scores according to basic metrics
-
 ├──custom_rmsd/ # Package to compute custom RMSD for different atom combinations and compare them to the basic metrics
-
 ├──README.md/ # This file
 
 ## Installation
