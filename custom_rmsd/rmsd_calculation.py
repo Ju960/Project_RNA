@@ -1,16 +1,5 @@
-import os
-import numpy as np
-import pandas as pd
-from Bio.PDB import PDBParser
-from scipy.spatial.transform import Rotation as R
-
 def load_structure(file_path, atom_list):
-    """
-    Loads a PDB structure and filters specified atoms.
-    :param file_path: Path to the PDB file
-    :param atom_list: List of atom names to extract
-    :return: np.array of atom coordinates
-    """
+    """Load a PDB structure and filter the specified atoms."""
     parser = PDBParser(QUIET=True)
     structure = parser.get_structure('model', file_path)
     atoms = []
@@ -20,26 +9,16 @@ def load_structure(file_path, atom_list):
     return np.array(atoms)
 
 def compute_rmsd(native_atoms, pred_atoms):
-    """
-    Computes RMSD after superposition.
-    :param native_atoms: np.array of native atom coordinates
-    :param pred_atoms: np.array of predicted atom coordinates
-    :return: RMSD (float)
-    """
+    """Compute the RMSD after alignment."""
     if len(native_atoms) != len(pred_atoms):
-        raise ValueError("The number of atoms does not match between native and prediction.")
+        raise ValueError("The number of atoms does not match between the native and predicted structures.")
     rotation, _ = R.align_vectors(pred_atoms, native_atoms)
     aligned_pred = rotation.apply(pred_atoms)
-    return np.sqrt(np.mean(np.sum((aligned_pred - native_atoms) ** 2, axis=1)))
+    return np.sqrt(np.mean(np.linalg.norm(aligned_pred - native_atoms, axis=1)))
 
 def process_native_predictions(native_path, pred_dir, score_file):
-    """
-    Adds coarse-grained RMSD (cgRMSD) values to the CSV score file by processing predictions.
-    :param native_path: Path to the native PDB file
-    :param pred_dir: Directory containing prediction PDB files
-    :param score_file: Path to the CSV score file
-    """
-    # Load coordinates for the native structure
+    """Add cgRMSD to the CSV file by processing predictions."""
+    # Load the coordinates of the native structure
     native_atoms = {}
     for comb in ATOM_COMBINATIONS:
         native_atoms[tuple(comb)] = load_structure(native_path, comb)
@@ -47,37 +26,43 @@ def process_native_predictions(native_path, pred_dir, score_file):
     # Load the CSV file
     scores_df = pd.read_csv(score_file)
 
-    # Retrieve prediction files
+    # Loop through the prediction files in the directory
     pred_files = sorted(os.listdir(pred_dir))
-
-    # Initialize new columns for each atom combination
+    if len(pred_files) != len(scores_df):
+        raise ValueError("The number of predictions does not match the number of rows in the CSV file.")
+    
+    # Initialize the new columns
     for comb in ATOM_COMBINATIONS:
         col_name = f"cgRMSD_{'_'.join(comb)}"
-        scores_df[col_name] = np.nan  # Placeholder for the scores
+        scores_df[col_name] = np.nan  # Placeholder
 
-    # Map prediction files by their names
-    pred_file_dict = {os.path.splitext(f)[0]: f for f in pred_files}
+    for i, pred_file in enumerate(pred_files):
+        pred_path = os.path.join(pred_dir, pred_file)
+        
+        # Construct the file name in the CSV (with 'normalized_' added before the .pdb extension)
+        normalized_pred_id = f"normalized_{pred_file}"
+        
+        # Find the matching row in the CSV
+        matching_row = scores_df[scores_df.iloc[:, 0] == normalized_pred_id]
+        if matching_row.empty:
+            print(f"No match found for file {pred_file}.")
+            continue
+        row_index = matching_row.index[0]  # Index of the matching row
 
-    for i, row in scores_df.iterrows():
-        # Use the first column (prediction name) to locate the corresponding file
-        pred_file_name = row['Prediction_File'].split('.')[0]  # Assumes 'Prediction_File' contains file names, e.g., rp03_1
-        if pred_file_name in pred_file_dict:
-            pred_path = os.path.join(pred_dir, pred_file_dict[pred_file_name])
+        # Load the atoms from the prediction
+        pred_atoms = {}
+        for comb in ATOM_COMBINATIONS:
+            pred_atoms[tuple(comb)] = load_structure(pred_path, comb)
+        
+        # Compute the custom RMSD for each atom combination
+        for comb in ATOM_COMBINATIONS:
+            try:
+                rmsd_score = compute_rmsd(native_atoms[tuple(comb)], pred_atoms[tuple(comb)])
+                scores_df.loc[row_index, f"cgRMSD_{'_'.join(comb)}"] = rmsd_score
+            except ValueError as e:
+                print(f"Error for {pred_file} with {comb}: {e}")
 
-            # Load prediction atom coordinates
-            pred_atoms = {}
-            for comb in ATOM_COMBINATIONS:
-                pred_atoms[tuple(comb)] = load_structure(pred_path, comb)
-            
-            # Compute custom RMSD for each combination
-            for comb in ATOM_COMBINATIONS:
-                try:
-                    rmsd_score = compute_rmsd(native_atoms[tuple(comb)], pred_atoms[tuple(comb)])
-                    scores_df.loc[i, f"cgRMSD_{'_'.join(comb)}"] = rmsd_score
-                except ValueError as e:
-                    print(f"Error for {pred_file_name} with {comb}: {e}")
-    
     # Save the updated CSV file
     updated_file = score_file.replace(".csv", "_with_cgRMSD.csv")
     scores_df.to_csv(updated_file, index=False)
-    print(f"Updated file with custom RMSD saved: {updated_file}")
+    print(f"File updated with custom RMSD: {updated_file}")
