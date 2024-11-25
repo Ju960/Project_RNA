@@ -7,7 +7,7 @@ The goal of this project is to compute coarse-grained RMSD (Root Mean Square Dev
 - MCQ: Max Cluster Quality
 - TM-Score: Template Modeling Score
 
-The main question we aim to address is:
+The main question we aim to address is: 
 Which coarse-grained representation has the highest correlation to current metrics?
 
 ## Objectives
@@ -24,7 +24,7 @@ Which coarse-grained representation has the highest correlation to current metri
 
 ## Contributors
 
-Group Member 1: Julia GOUNIN
-Group Member 2: Océane SAIBOU
-Group Member 3: Reshma VASANTE
+Group Member 1: Julia GOUNIN 
+Group Member 2: Océane SAIBOU 
+Group Member 3: Reshma VASANTE 
 
